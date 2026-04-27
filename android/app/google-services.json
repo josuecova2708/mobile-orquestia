@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "139914767846",
+    "project_id": "project-f11e5e0e-e3c4-4083-bb6",
+    "storage_bucket": "project-f11e5e0e-e3c4-4083-bb6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:139914767846:android:ee5aa2637e6eb6ca607a27",
+        "android_client_info": {
+          "package_name": "com.orquestia.orquestia_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDcSZVQWJHhg9L74N-CxD2pNDHr5EcK1U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

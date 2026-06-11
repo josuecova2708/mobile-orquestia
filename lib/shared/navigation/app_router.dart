@@ -12,24 +12,27 @@ import '../../features/admin/ejecuciones_screen.dart';
 import '../../features/admin/empresa_selector_screen.dart';
 import '../../features/admin/invitar_admin_screen.dart';
 import '../../features/auth/login_screen.dart';
+import '../../features/cliente/detalle_tramite_screen.dart';
+import '../../features/cliente/mis_tramites_screen.dart';
+import '../../features/cliente/recepcion_chat_screen.dart';
 import '../../features/funcionario/historial_screen.dart';
 import '../../features/funcionario/mis_tareas_screen.dart';
 import '../../features/funcionario/notificaciones_screen.dart';
-import '../../features/tracking/timeline_public_screen.dart';
-import '../../features/tracking/tracking_screen.dart';
 
 class AppRouter {
   static GoRouter build(AuthService auth) {
     return GoRouter(
-      initialLocation: '/',
+      initialLocation: '/login',
       redirect: (context, state) {
         final loggedIn = auth.isLoggedIn;
         final loc = state.matchedLocation;
 
+        final privado = loc.startsWith('/admin') ||
+            loc.startsWith('/funcionario') ||
+            loc.startsWith('/cliente');
+
         // Sin sesión → no puede acceder a zonas privadas
-        if ((loc.startsWith('/admin') || loc.startsWith('/funcionario')) && !loggedIn) {
-          return '/login';
-        }
+        if (privado && !loggedIn) return '/login';
 
         // Admin sin empresa seleccionada → ir al selector (excepto si ya está ahí)
         if (loc.startsWith('/admin') &&
@@ -39,27 +42,40 @@ class AppRouter {
           return '/admin/selector';
         }
 
-        // Ya logueado intenta ir al login o root → redirigir al dashboard
-        if ((loc == '/login' || loc == '/') && loggedIn) {
-          if (auth.user!.isAdmin) {
+        // Ya logueado en el login → redirigir al dashboard según rol
+        if (loc == '/login' && loggedIn) {
+          final u = auth.user!;
+          if (u.isAdmin) {
             return auth.needsEmpresaSelection ? '/admin/selector' : '/admin';
           }
+          if (u.isCliente) return '/cliente';
           return '/funcionario';
         }
 
         return null;
       },
       routes: [
-        // === PÚBLICO ===
-        GoRoute(path: '/', builder: (_, __) => const TrackingScreen()),
+        GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+
+        // === CLIENTE ===
+        ShellRoute(
+          builder: (context, state, child) => _ClienteShell(child: child),
+          routes: [
+            GoRoute(path: '/cliente', builder: (_, __) => const MisTramitesScreen()),
+            GoRoute(path: '/cliente/notificaciones', builder: (_, __) => const NotificacionesScreen()),
+          ],
+        ),
         GoRoute(
-          path: '/tracking/:id',
+          path: '/cliente/tramite/:id',
           builder: (_, state) {
-            final instancia = state.extra as InstanciaPublica;
-            return TimelinePublicScreen(instancia: instancia);
+            final inst = state.extra as InstanciaProceso?;
+            return DetalleTramiteScreen(
+              instanciaId: state.pathParameters['id']!,
+              tituloInicial: inst?.displayNombre ?? 'Trámite',
+            );
           },
         ),
-        GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+        GoRoute(path: '/cliente/recepcion', builder: (_, __) => const RecepcionChatScreen()),
 
         // === ADMIN ===
         GoRoute(path: '/admin/selector', builder: (_, __) => const EmpresaSelectorScreen()),
@@ -255,6 +271,90 @@ class _FuncionarioShell extends StatelessWidget {
             BottomNavigationBarItem(icon: Icon(Icons.assignment_outlined), label: 'Mis tareas'),
             BottomNavigationBarItem(icon: Icon(Icons.notifications_outlined), label: 'Notificaciones'),
             BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Historial'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Shell del Cliente con Bottom Navigation (Trámites / Notificaciones) + logout
+class _ClienteShell extends StatelessWidget {
+  final Widget child;
+  const _ClienteShell({required this.child});
+
+  int _currentIndex(BuildContext context) {
+    final loc = GoRouterState.of(context).matchedLocation;
+    if (loc.startsWith('/cliente/notificaciones')) return 1;
+    return 0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final idx = _currentIndex(context);
+    final auth = context.watch<AuthService>();
+    final user = auth.user;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(idx == 1 ? 'Notificaciones' : 'Mis trámites'),
+        actions: [
+          PopupMenuButton<String>(
+            icon: CircleAvatar(
+              radius: 16,
+              backgroundColor: AppColors.border,
+              child: Text(
+                user != null && user.nombre.isNotEmpty ? user.nombre[0].toUpperCase() : 'C',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              ),
+            ),
+            onSelected: (value) async {
+              if (value == 'logout') {
+                final router = GoRouter.of(context);
+                auth.logout().then((_) => router.go('/login'));
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                enabled: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(user?.nombreCompleto ?? '',
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
+                    Text(user?.email ?? '',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'logout',
+                child: Row(children: [
+                  Icon(Icons.logout, size: 18, color: AppColors.cancelled),
+                  SizedBox(width: 10),
+                  Text('Cerrar sesión', style: TextStyle(color: AppColors.cancelled)),
+                ]),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: child,
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.border))),
+        child: BottomNavigationBar(
+          currentIndex: idx,
+          onTap: (i) {
+            switch (i) {
+              case 0: context.go('/cliente');
+              case 1: context.go('/cliente/notificaciones');
+            }
+          },
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined), label: 'Mis trámites'),
+            BottomNavigationBarItem(icon: Icon(Icons.notifications_outlined), label: 'Notificaciones'),
           ],
         ),
       ),

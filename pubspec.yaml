@@ -36,6 +36,12 @@ dependencies:
   # Abrir web para "resolver en la web"
   url_launcher: ^6.3.1
 
+  # Cámara / galería para subir documentos desde el celular
+  image_picker: ^1.1.2
+
+  # Selección de archivos (PDF, Word, etc.) respetando formatos permitidos
+  file_picker: ^8.1.4
+
   cupertino_icons: ^1.0.8
 
 dev_dependencies:

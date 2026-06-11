@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api/api_constants.dart';
 import '../../core/models/tarea_instancia.dart';
+import '../../core/services/auth_service.dart';
 import '../../core/services/tarea_service.dart';
 import '../../core/theme/app_theme.dart';
+import '../../shared/widgets/completar_tarea_screen.dart';
 import '../../shared/widgets/estado_chip.dart';
 import '../../shared/widgets/loading_overlay.dart';
 
@@ -38,6 +41,28 @@ class _MisTareasScreenState extends State<MisTareasScreen> {
     final uri = Uri.parse(ApiConstants.webUrl);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _completar(TareaInstancia tarea) async {
+    final empresaId = context.read<AuthService>().user?.empresaId ?? '';
+    final ok = await Navigator.of(context).push<bool>(MaterialPageRoute(
+      builder: (_) => CompletarTareaScreen(
+        titulo: tarea.nodoLabel,
+        campos: tarea.formularioCampos,
+        empresaId: empresaId,
+        instanciaId: tarea.instanciaId,
+        tareaId: tarea.id,
+        onSubmit: (datos, comentario) => _service.completarTarea(tarea.id, datos, comentario),
+      ),
+    ));
+    if (ok == true) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tarea completada'), backgroundColor: AppColors.completed),
+        );
+      }
+      _cargar();
     }
   }
 
@@ -83,6 +108,7 @@ class _MisTareasScreenState extends State<MisTareasScreen> {
                       itemBuilder: (context, i) => _TareaCard(
                         tarea: _tareas[i],
                         onResolverWeb: _abrirWeb,
+                        onCompletar: () => _completar(_tareas[i]),
                       ),
                     ),
                   ),
@@ -94,8 +120,9 @@ class _MisTareasScreenState extends State<MisTareasScreen> {
 class _TareaCard extends StatelessWidget {
   final TareaInstancia tarea;
   final VoidCallback onResolverWeb;
+  final VoidCallback onCompletar;
 
-  const _TareaCard({required this.tarea, required this.onResolverWeb});
+  const _TareaCard({required this.tarea, required this.onResolverWeb, required this.onCompletar});
 
   @override
   Widget build(BuildContext context) {
@@ -145,38 +172,21 @@ class _TareaCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          // Aviso + botón resolver en la web
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.activeLight,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.active.withValues(alpha: 0.2)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.open_in_browser, color: AppColors.active, size: 18),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'Completa esta tarea desde el portal web',
-                    style: TextStyle(fontSize: 12, color: AppColors.active, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
+            child: ElevatedButton.icon(
+              onPressed: onCompletar,
+              icon: const Icon(Icons.check, size: 18),
+              label: const Text('Completar aquí'),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Center(
+            child: TextButton.icon(
               onPressed: onResolverWeb,
-              icon: const Icon(Icons.open_in_new, size: 16),
+              icon: const Icon(Icons.open_in_new, size: 15),
               label: const Text('Resolver en la web'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
+              style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
             ),
           ),
         ],

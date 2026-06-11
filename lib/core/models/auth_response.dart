@@ -50,4 +50,5 @@ class AuthResponse {
   String get nombreCompleto => '$nombre $apellido';
   bool get isAdmin => rol == 'ADMIN' || rol == 'DISEÑADOR';
   bool get isFuncionario => rol == 'FUNCIONARIO';
+  bool get isCliente => rol == 'CLIENTE';
 }

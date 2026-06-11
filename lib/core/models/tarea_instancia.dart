@@ -1,4 +1,5 @@
 import 'instancia.dart' show parseBackendDate;
+import 'campo_formulario.dart';
 
 class TareaInstancia {
   final String id;
@@ -9,6 +10,8 @@ class TareaInstancia {
   final String estado;
   final DateTime fechaCreacion;
   final DateTime? fechaCompletado;
+  final List<CampoFormulario> formularioCampos;
+  final Map<String, dynamic> datos;
 
   TareaInstancia({
     required this.id,
@@ -19,6 +22,8 @@ class TareaInstancia {
     required this.estado,
     required this.fechaCreacion,
     this.fechaCompletado,
+    this.formularioCampos = const [],
+    this.datos = const {},
   });
 
   factory TareaInstancia.fromJson(Map<String, dynamic> json) => TareaInstancia(
@@ -32,6 +37,8 @@ class TareaInstancia {
         fechaCompletado: json['fechaCompletado'] != null
             ? parseBackendDate(json['fechaCompletado'])
             : null,
+        formularioCampos: CampoFormulario.listFromJson(json['formularioCampos']),
+        datos: (json['datos'] as Map<String, dynamic>?) ?? {},
       );
 
   bool get isPendiente => estado == 'PENDIENTE';

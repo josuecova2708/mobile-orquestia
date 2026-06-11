@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/push_notification_service.dart';
@@ -39,13 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
-        ),
-        title: const Text('Iniciar sesión'),
-      ),
+      appBar: AppBar(title: const Text('Iniciar sesión')),
       body: Consumer<AuthService>(
         builder: (context, auth, _) {
           return SingleChildScrollView(
@@ -62,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Ingresa con tu cuenta de administrador o funcionario.',
+                    'Ingresa con tu cuenta de cliente, funcionario o administrador.',
                     style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
                   ),
                   const SizedBox(height: 40),

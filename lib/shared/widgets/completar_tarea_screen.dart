@@ -71,9 +71,28 @@ class _CompletarTareaScreenState extends State<CompletarTareaScreen> {
     for (final c in _campos) {
       if (!c.requerido) continue;
       final v = _respuestas[c.nombre];
+      if (v is List) {
+        if (v.isEmpty) return true;
+        continue;
+      }
       if (v == null || v == '' || (v is String && v.trim().isEmpty)) return true;
     }
     return false;
+  }
+
+  bool _casillaMarcada(String campo, String op) {
+    final v = _respuestas[campo];
+    return v is List && v.contains(op);
+  }
+
+  void _toggleCasilla(String campo, String op) {
+    final actual = _respuestas[campo] is List ? List<String>.from(_respuestas[campo] as List) : <String>[];
+    if (actual.contains(op)) {
+      actual.remove(op);
+    } else {
+      actual.add(op);
+    }
+    _respuestas[campo] = actual;
   }
 
   Future<void> _enviar() async {
@@ -311,6 +330,21 @@ class _CompletarTareaScreenState extends State<CompletarTareaScreen> {
           items: c.opciones.map((o) => DropdownMenuItem(value: o, child: Text(o))).toList(),
           onChanged: (v) => setState(() => _respuestas[c.nombre] = v),
           decoration: const InputDecoration(hintText: 'Selecciona...'),
+        );
+      case 'CASILLAS':
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final op in c.opciones)
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                dense: true,
+                value: _casillaMarcada(c.nombre, op),
+                title: Text(op),
+                onChanged: (_) => setState(() => _toggleCasilla(c.nombre, op)),
+              ),
+          ],
         );
       case 'NUMERO':
         return TextField(

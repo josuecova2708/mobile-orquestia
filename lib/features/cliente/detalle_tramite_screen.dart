@@ -172,6 +172,10 @@ class _DetalleTramiteScreenState extends State<DetalleTramiteScreen> {
         Text('Archivo adjunto', style: TextStyle(fontSize: 13, color: AppColors.active)),
       ]);
     }
+    if (v is List) {
+      // CASILLAS (selección múltiple)
+      return Text(v.join(', '), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500));
+    }
     String texto;
     if (v is bool) {
       texto = v ? 'Sí' : 'No';
